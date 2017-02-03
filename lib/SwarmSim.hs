@@ -5,6 +5,7 @@
 module SwarmSim where
 
 import Data.Vector (Vector)
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Chan.Unagi
 import Control.Concurrent.Async
 import Data.Word
@@ -46,8 +47,11 @@ agent inChan outChan = forever $ do
 
 main = do
   (inChan, outChan) <- newChan
-  a <- async $ agent outChan inChan
+  runningAgent <- async $ agent outChan inChan
 
   let messages = map (ESensor . Position) $ zipWith (curry Dim2) [1..5] [5..10]
   mapM_ (writeChan inChan) messages
 
+  -- cleanup
+  threadDelay (500000)
+  cancel runningAgent
