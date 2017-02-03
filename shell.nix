@@ -4,11 +4,11 @@ with pkgs;
 
 let
    ghc = haskell.compiler."${compiler}";
-   packages = haskell.packages."${compiler}";
+   hs = haskell.packages."${compiler}";
 in
 
 haskell.lib.buildStackProject {
   name = "SwarmSim";
-  buildInputs = with packages; [cabal-install];
+  buildInputs = [zlib hs.cabal-install];
   inherit ghc;
 }
