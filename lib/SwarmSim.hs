@@ -13,6 +13,21 @@ import Control.Monad.State.Strict
 import Control.Monad.Trans
 
 
+data MailBox a = MkMailBox
+                 { mbInChan  :: InChan  a
+                 , mbOutChan :: OutChan a
+                 }
+
+newMailBox :: IO (MailBox a)
+newMailBox = uncurry MkMailBox <$> newChan
+
+readMailBox :: MailBox a -> IO a
+readMailBox = readChan . mbOutChan
+
+writeMailBox :: MailBox a -> a -> IO ()
+writeMailBox box = writeChan (mbInChan box)
+
+
 newtype Coordinates = Dim2 (Int, Int) deriving Show
 
 data Sensor = Position Coordinates deriving Show
@@ -26,10 +41,10 @@ data Event = ESensor Sensor
 
 data AgentState = AgentState
   { agentId :: Word8
-  , agentPosition :: Coordinates
   , agentBoundaryModels :: Vector Coordinates
   , agentLogger :: forall a. Show a => a -> IO ()
   }
+
 
 
 -- processSensor :: (MonadIO m, MonadState AgentState m) => Sensor -> m ()
@@ -38,19 +53,19 @@ processSensor = \case
     print p
 
 
-agent inChan outChan = forever $ do
-  event <- readChan inChan
+agent mailbox = forever $ do
+  event <- readMailBox mailbox
   case event of
     ESensor  x -> processSensor x
     EMessage x -> error "agent EMessage"
 
 
 main = do
-  (inChan, outChan) <- newChan
-  runningAgent <- async $ agent outChan inChan
+  mailbox <- newMailBox
+  runningAgent <- async $ agent mailbox
 
   let messages = map (ESensor . Position) $ zipWith (curry Dim2) [1..5] [5..10]
-  mapM_ (writeChan inChan) messages
+  mapM_ (writeMailBox mailbox) messages
 
   -- cleanup
   threadDelay (500000)
