@@ -9,6 +9,16 @@ in
 
 haskell.lib.buildStackProject {
   name = "SwarmSim";
-  buildInputs = [zlib hs.cabal-install];
+  buildInputs =
+    [zlib SDL SDL_image SDL_ttf glfw freeglut mesa_glu ]
+    ++
+    [ blas liblapack ]
+    ++
+    (with hs;
+    [cabal-install])
+    ++
+    (with xorg;
+    [libX11 libXi libXrandr libXxf86vm libXcursor libXinerama libXext])
+    ;
   inherit ghc;
 }

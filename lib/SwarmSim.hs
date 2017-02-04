@@ -41,20 +41,8 @@ writeMailBox box = writeChan (mbInChan box)
 
 newtype Coordinates = Dim2 (Int, Int) deriving Show
 
-data Sensor = Position Coordinates deriving Show
-
--- | A `Message` is information related to an agent by a neighbor
-data Message = Boundary Coordinates
-             deriving Show
-
-data Event = ESensor Sensor
-           | EMessage Message
-           deriving Show
-
-
 data AgentState = AgentState
-  { agentId :: Word8
-  , agentMailBox :: MailBox Event
+  { agentId :: AgentId
   , agentPositionSensor :: InputStream Coordinates
   , agentBoundaryModels :: Vector Coordinates
   }
@@ -68,33 +56,23 @@ readSensor :: (MonadIO m, MonadState AgentState m) => InputStream a -> m (Maybe 
 readSensor = liftIO . Stream.read
 
 
--- processSensor :: (MonadIO m, MonadState AgentState m) => Sensor -> m ()
--- processSensor sensor = do
---   case sensor of
---     Position (Dim2 p@(x, y)) -> do
---       liftIO $ print p
 
-fireSensors :: (MonadIO m, MonadState AgentState m) => m ()
-fireSensors = do
-  -- liftIO $ putStrLn "Getting box"
-  box <- gets agentMailBox
-
-  -- liftIO $ say "Getting Position"
-  pos <- gets agentPositionSensor >>= readSensor
-  -- liftIO $ say $ pack $ show pos
-
-  when (isJust pos) $ liftIO $ do
-    -- liftIO $ say "Writing to box"
-    writeMailBox box (ESensor (Position (fromJust pos)))
-
+agentDoGetCurrentVector = error "agentDoGetCurrentVector"
 
 
 agent state = flip evalStateT state $ go
 
   where go = do
 
-          async $ forever fireSensors
-          box <- gets agentMailBox
+
+          forever $ do
+            event <- liftIO $ readMailBox box
+            case event of
+              Status -> do
+                (pos, vel) <- agentDoGetCurrentVector
+                me <- gets agentId
+                
+                
 
           forever $ do
             liftIO $ say "Reading box"
@@ -103,10 +81,11 @@ agent state = flip evalStateT state $ go
 
 
 
-printer :: MailBox String -> IO ()
-printer box = forever $ do
-  str <- readMailBox box
-  putStrLn str
+displayer box = do
+  forever $ do
+    pos <- readMailBox box
+    
+    undefined
 
 main = do
 
@@ -114,6 +93,7 @@ main = do
 
   state <- AgentState
            <$> pure 0
+           <*> newMailBox
            <*> newMailBox
            <*> sensePosition
            <*> pure V.empty

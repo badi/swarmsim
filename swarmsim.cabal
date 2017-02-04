@@ -13,24 +13,27 @@ build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
 
-library
-  hs-source-dirs: lib
-  exposed-modules: SwarmSim
-  build-depends: base >= 4.7 && < 5
-               , vector
-               , unagi-chan
-               , async
-               , lifted-async
-               , mtl
-               , io-streams
-               , bytestring
-               , text
-  default-language: Haskell2010
-  ghc-options: -Wall
+-- library
+--   hs-source-dirs: lib
+--   exposed-modules: SwarmSim
+--   build-depends: base >= 4.7 && < 5
+--                , vector
+--                , unagi-chan
+--                , async
+--                , lifted-async
+--                , mtl
+--                , io-streams
+--                , bytestring
+--                , text
+--   default-language: Haskell2010
+--   ghc-options: -Wall
 
 executable swarmsim
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
-  ghc-options:         -Wall
+                     , gloss
+                     , hmatrix
+                     -- , GLFW-b, OpenGL
+  ghc-options:         -Wall -threaded
