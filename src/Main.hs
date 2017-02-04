@@ -22,14 +22,14 @@ modelToPic :: Model -> Picture
 modelToPic a = p
   where
     [x, y] = V.toList $ pos a
-    [vx, vy] = V.toList $ vel a
+    [vx, vy] = V.toList $ pos a + vel a
     position = Translate x y $ Circle 5
-    velocity = Translate vx vy $ Line [(x, y), (vx, vy)]
-    p = Pictures [box, velocity, position]
+    velocity = Line [(x, y), (vx, vy)]
+    p = Pictures [box, traceShow velocity velocity, position]
 
 
 nextModel :: Float -> Model -> Model
-nextModel delta agent = traceShow (delta, agent, agent') agent'
+nextModel delta agent = agent'
   where
     agent' = Agent r v a
     -- r = r0 + vt + (1/2)at^2
