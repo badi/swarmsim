@@ -22,13 +22,14 @@ data Agent = Agent
 type Model = Agent
 
 initialModel :: Model
-initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [30, 30])
+initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [100, -10])
 
 modelToPic :: Model -> Picture
 modelToPic a = p
   where
-    [rx, ry] = V.toList $ pos a
-    [vx, vy] = V.toList $ pos a + vel a
+    r = makePeriodic $ pos a
+    [rx, ry] = V.toList $ r
+    [vx, vy] = V.toList $ r + vel a
     position = Translate rx ry $ Circle 5
     velocity = Line [(rx, ry), (vx, vy)]
     p = Pictures [box, traceShow velocity velocity, position]
@@ -46,14 +47,14 @@ nextModel delta agent = agent'
 
 
 step :: ViewPort -> Float -> Model -> Model
-step _ t = makePeriodic . nextModel t
+step _ = nextModel
 
 
-makePeriodic :: Agent -> Agent
-makePeriodic a = a { pos = r' }
+makePeriodic :: V.Vector Float -> V.Vector Float
+makePeriodic r = r'
   where
     r' :: V.Vector Float
-    r' = V.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) (pos a)
+    r' = V.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) r
 
 
 
