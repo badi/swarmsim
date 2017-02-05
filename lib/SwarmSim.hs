@@ -4,101 +4,79 @@
 
 module SwarmSim where
 
-import Data.Vector (Vector)
-import qualified Data.Vector as V
-import System.IO.Streams (InputStream, Generator, yield, fromGenerator)
-import qualified System.IO.Streams as Stream
-import Data.Maybe
-import Control.Concurrent (threadDelay)
-import Control.Concurrent.Chan.Unagi
-import Control.Concurrent.Async.Lifted
-import Data.Word
-import Control.Monad.State.Strict
-import Control.Monad.Trans
+import Debug.Trace
 
-import qualified Data.ByteString.Char8 as S8
-import Data.Text (Text, pack)
-import Data.Text.Encoding (encodeUtf8)
+import Graphics.Gloss
+import Graphics.Gloss.Data.ViewPort (ViewPort)
+
+import qualified System.IO.Streams as Stream
+
+import qualified Numeric.LinearAlgebra as V
 
 -- http://www.snoyman.com/blog/2016/11/haskells-missing-concurrency-basics
-say = S8.putStrLn . encodeUtf8
-
-
-data MailBox a = MkMailBox
-                 { mbInChan  :: InChan  a
-                 , mbOutChan :: OutChan a
-                 }
-
-newMailBox :: IO (MailBox a)
-newMailBox = uncurry MkMailBox <$> newChan
-
-readMailBox :: MailBox a -> IO a
-readMailBox = readChan . mbOutChan
-
-writeMailBox :: MailBox a -> a -> IO ()
-writeMailBox box = writeChan (mbInChan box)
-
-
-newtype Coordinates = Dim2 (Int, Int) deriving Show
-
-data AgentState = AgentState
-  { agentId :: AgentId
-  , agentPositionSensor :: InputStream Coordinates
-  , agentBoundaryModels :: Vector Coordinates
-  }
-
-
-sensePosition :: IO (InputStream Coordinates)
-sensePosition = fromGenerator $ forever $ yield (Dim2 (0,0))
-
-
-readSensor :: (MonadIO m, MonadState AgentState m) => InputStream a -> m (Maybe a)
-readSensor = liftIO . Stream.read
+-- say = S8.putStrLn . encodeUtf8
 
 
 
-agentDoGetCurrentVector = error "agentDoGetCurrentVector"
+box = Line [(0,0), (0,100), (100,100), (100,0), (0,0)]
+
+box_size :: Float
+box_size = realToFrac norm
+  where
+    norm = V.norm_2 v
+    v = V.fromList [100, 100] :: V.Vector Float
+
+data Agent = Agent
+             { pos :: V.Vector Float
+             , vel :: V.Vector Float
+             , acc :: V.Vector Float
+             } deriving Show
+
+type Model = Agent
+
+initialModel :: Model
+initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [100, -10])
+
+modelToPic :: Model -> Picture
+modelToPic a = p
+  where
+    r = pos a
+    [rx, ry] = V.toList $ r
+    [vx, vy] = V.toList $ r + vel a
+    position = Translate rx ry $ Circle 5
+    velocity = Line [(rx, ry), (vx, vy)]
+    p = Pictures [box, traceShow velocity velocity, position]
 
 
-agent state = flip evalStateT state $ go
-
-  where go = do
-
-
-          forever $ do
-            event <- liftIO $ readMailBox box
-            case event of
-              Status -> do
-                (pos, vel) <- agentDoGetCurrentVector
-                me <- gets agentId
-                
-                
-
-          forever $ do
-            liftIO $ say "Reading box"
-            pos' <- liftIO $ readMailBox box
-            liftIO $ say $ pack $ show pos'
+nextModel :: Float -> Model -> Model
+nextModel delta agent = agent'
+  where
+    agent' = Agent r v a
+    -- r = r0 + vt + (1/2)at^2
+    r = (pos agent) + (V.scale delta (vel agent)) + (V.scale (0.5*delta**2) (acc agent) )
+    -- v = at + v0
+    v = (vel agent) + (V.scale delta (acc agent))
+    a = acc agent
 
 
+step :: ViewPort -> Float -> Model -> Model
+step _ t = makePeriodic . nextModel t
 
-displayer box = do
-  forever $ do
-    pos <- readMailBox box
-    
-    undefined
 
-main = do
+makePeriodic :: Agent -> Agent
+makePeriodic a = a { pos = r' }
+  where
+    r = pos a
+    r' :: V.Vector Float
+    r' = V.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) r
 
-  -- agent 0 (Dim2 (0,0)) 0
 
-  state <- AgentState
-           <$> pure 0
-           <*> newMailBox
-           <*> newMailBox
-           <*> sensePosition
-           <*> pure V.empty
-  runningAgent <- async $ agent state
 
-  -- cleanup
-  threadDelay (5000)
-  cancel runningAgent
+test =
+  simulate
+    (InWindow "Agents" (100, 100) (0, 0))
+    white
+    120
+    initialModel
+    modelToPic
+    step
