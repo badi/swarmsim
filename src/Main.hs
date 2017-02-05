@@ -7,6 +7,12 @@ import qualified Numeric.LinearAlgebra as V
 
 box = Line [(0,0), (0,100), (100,100), (100,0), (0,0)]
 
+box_size :: Float
+box_size = realToFrac norm
+  where
+    norm = V.norm_2 v
+    v = V.fromList [100, 100] :: V.Vector Float
+
 data Agent = Agent
              { pos :: V.Vector Float
              , vel :: V.Vector Float
@@ -16,15 +22,15 @@ data Agent = Agent
 type Model = Agent
 
 initialModel :: Model
-initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [0, 0])
+initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [30, 30])
 
 modelToPic :: Model -> Picture
 modelToPic a = p
   where
-    [x, y] = V.toList $ pos a
+    [rx, ry] = V.toList $ pos a
     [vx, vy] = V.toList $ pos a + vel a
-    position = Translate x y $ Circle 5
-    velocity = Line [(x, y), (vx, vy)]
+    position = Translate rx ry $ Circle 5
+    velocity = Line [(rx, ry), (vx, vy)]
     p = Pictures [box, traceShow velocity velocity, position]
 
 
@@ -40,7 +46,16 @@ nextModel delta agent = agent'
 
 
 step :: ViewPort -> Float -> Model -> Model
-step _ = nextModel
+step _ t = makePeriodic . nextModel t
+
+
+makePeriodic :: Agent -> Agent
+makePeriodic a = a { pos = r' }
+  where
+    r' :: V.Vector Float
+    r' = V.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) (pos a)
+
+
 
 main =
   simulate
