@@ -27,7 +27,7 @@ initialModel = Agent (V.fromList [0, 0]) (V.fromList [10, 10]) (V.fromList [100,
 modelToPic :: Model -> Picture
 modelToPic a = p
   where
-    r = makePeriodic $ pos a
+    r = pos a
     [rx, ry] = V.toList $ r
     [vx, vy] = V.toList $ r + vel a
     position = Translate rx ry $ Circle 5
@@ -47,12 +47,13 @@ nextModel delta agent = agent'
 
 
 step :: ViewPort -> Float -> Model -> Model
-step _ = nextModel
+step _ t = makePeriodic . nextModel t
 
 
-makePeriodic :: V.Vector Float -> V.Vector Float
-makePeriodic r = r'
+makePeriodic :: Agent -> Agent
+makePeriodic a = a { pos = r' }
   where
+    r = pos a
     r' :: V.Vector Float
     r' = V.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) r
 
