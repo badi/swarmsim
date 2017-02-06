@@ -21,4 +21,5 @@ haskell.lib.buildStackProject {
     [libX11 libXi libXrandr libXxf86vm libXcursor libXinerama libXext])
     ;
   inherit ghc;
+  LD_LIBRARY_PATH = [ "/run/current-system/sw" ];
 }
