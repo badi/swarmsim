@@ -5,3 +5,6 @@ packages:
 extra-deps:
 - unagi-chan-0.4.0.0
 resolver: lts-7.18
+nix:
+  enable: true
+  shell-file: shell.nix
