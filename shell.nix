@@ -12,7 +12,7 @@ haskell.lib.buildStackProject {
   buildInputs =
     [zlib SDL SDL_image SDL_ttf glfw freeglut mesa_glu ]
     ++
-    [ blas liblapack ]
+    [ gfortran.cc blas liblapack ]
     ++
     (with hs;
     [cabal-install])
