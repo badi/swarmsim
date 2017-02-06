@@ -22,4 +22,5 @@ haskell.lib.buildStackProject {
     ;
   inherit ghc;
   LD_LIBRARY_PATH = [ "/run/current-system/sw" ];
+  LIBGL_DEBUG = "verbose";
 }
