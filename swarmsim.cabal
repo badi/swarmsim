@@ -28,7 +28,7 @@ library
                , gloss
                , hmatrix
   default-language: Haskell2010
-  ghc-options: -Wall
+  ghc-options: -Wall -funbox-strict-fields
 
 executable swarmsim
   hs-source-dirs:      src

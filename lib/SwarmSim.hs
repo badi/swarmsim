@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
@@ -11,10 +12,103 @@ import Graphics.Gloss.Data.ViewPort (ViewPort)
 
 import qualified System.IO.Streams as Stream
 
+-- import qualified Data.Vector
 import qualified Numeric.LinearAlgebra as LA
 
 -- http://www.snoyman.com/blog/2016/11/haskells-missing-concurrency-basics
 -- say = S8.putStrLn . encodeUtf8
+
+type AgentId = Integer
+
+newtype Tagged t a = Tagged { unTag :: a }
+deriving instance Show a => Show (Tagged t a)
+
+withTagged :: Tagged t a -> (a -> b) -> Tagged t b
+withTagged t f = Tagged $! f $ unTag t
+
+retag :: Tagged t a -> Tagged s a
+retag = Tagged . unTag
+
+-- --------------------------------------------------------------------------------
+
+-- | Tag for mass
+data M
+
+-- | Tag for position
+data X
+
+-- | Tag for velocity
+data V
+
+-- | Tag for acceleration
+data A
+
+-- | Tag for force
+data F
+
+
+type Mass = Tagged M Double
+type Masses = Tagged M (LA.Vector Double)
+
+type Position = Tagged X (LA.Vector Double)
+type Positions = Tagged X (LA.Matrix Double)
+
+type Velocity = Tagged V (LA.Vector Double)
+type Velocities = Tagged V (LA.Matrix Double)
+
+type Acceleration = Tagged A (LA.Vector Double)
+type Accelerations = Tagged A (LA.Matrix Double)
+
+type Force = Tagged F (LA.Vector Double)
+type Forces = Tagged F (LA.Matrix Double)
+
+type TimeStep = Double
+
+
+data State =
+  MkState
+  { stMass  :: !Masses
+  , stPos   :: !Positions
+  , stVel   :: !Velocities
+  , stAcc   :: !Accelerations
+  } deriving Show
+
+data PotentialParams =
+  MkPotentialParams
+  { ppCuttoff :: !Double
+  , ppRadius :: !Double
+  , ppCharge :: !Double
+  , ppOrder :: !Int
+  } deriving Show
+
+potential :: PotentialParams -> Force
+potential pp = fs
+  where
+    fs = undefined
+
+velocityVerlet :: TimeStep -> State -> State
+velocityVerlet dt s = s'
+  where
+    x = unTag $! stPos s
+    v = unTag $! stVel s
+    a = unTag $! stAcc s
+    m = unTag $! stMass s
+
+    -- x⃗(t+Δt) = x⃗(t) + v⃗(t)Δt + 0.5a⃗(t)Δt²
+    x' = x + dt`LA.scale`v + (0.5*dt^^2)`LA.scale`a
+
+    f  = undefined
+    a' = undefined
+
+    -- v⃗(t+Δt)=v⃗(t)+0.5t(a⃗(t)+a⃗(t+Δt))Δt
+    v' = v + (0.5*dt)`LA.scale`(a+a')
+
+    s' = s
+         { stPos = Tagged x'
+         , stVel = Tagged v'
+         , stAcc = Tagged a'
+         }
+  
 
 
 
