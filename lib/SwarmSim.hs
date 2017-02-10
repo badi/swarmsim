@@ -84,7 +84,6 @@ data State =
   , stCharge:: !(Vector Charge)
   , stPos   :: !(Vector Position)
   , stVel   :: !(Vector Velocity)
-  , stAcc   :: !(Vector Acceleration)
   , stCutoff:: !(Vector Distance)
   , stPP    :: !PotentialParams
   } deriving Show
@@ -222,7 +221,6 @@ velocityVerlet dt s = s'
     s' = s
          { stPos = V.map Tagged x'
          , stVel = V.map Tagged v'
-         , stAcc = V.map Tagged a'
          }
 
 
