@@ -26,14 +26,15 @@ library
                , bytestring
                , text
                , gloss
-               , hmatrix
+               , linear
+               , lens
   default-language: Haskell2010
-  ghc-options: -Wall -funbox-strict-fields
+  ghc-options: -funbox-strict-fields -w
 
-executable swarmsim
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  default-language:    Haskell2010
-  build-depends:       base >= 4.7 && < 5
-                     , swarmsim
-  ghc-options:         -Wall -threaded
+-- executable swarmsim
+--   hs-source-dirs:      src
+--   main-is:             Main.hs
+--   default-language:    Haskell2010
+--   build-depends:       base >= 4.7 && < 5
+--                      , swarmsim
+--   ghc-options:         -Wall -threaded
