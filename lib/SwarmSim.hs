@@ -8,8 +8,8 @@ module SwarmSim where
 
 import Debug.Trace
 
--- import Graphics.Gloss
--- import Graphics.Gloss.Data.ViewPort (ViewPort)
+import Graphics.Gloss hiding (Vector)
+import Graphics.Gloss.Data.ViewPort (ViewPort)
 
 import qualified System.IO.Streams as Stream
 
@@ -18,7 +18,7 @@ import qualified System.IO.Streams as Stream
 import Linear as L
 import qualified Linear.V as L
 import qualified Data.Vector as V
-import Control.Lens (FoldableWithIndex(..))
+import Control.Lens (FoldableWithIndex(..), (^.))
 
 type Vector a = V.Vector a
 type Matrix a = V.Vector (Vector a)
@@ -225,49 +225,60 @@ velocityVerlet dt s = s'
 
 
 
--- box = Line [(0,0), (0,100), (100,100), (100,0), (0,0)]
+box = Line [(0,0), (0,100), (100,100), (100,0), (0,0)]
 
--- box_size :: Float
--- box_size = realToFrac norm
---   where
---     norm = LA.norm_2 v
---     v = LA.fromList [100, 100] :: Vector Float
+box_size :: Float
+box_size = realToFrac $ norm [100, 100]
 
--- data Agent = Agent
---              { pos :: Vector Float
---              , vel :: LA.Vector Float
---              , acc :: LA.Vector Float
---              } deriving Show
+type Model = State
 
--- type Model = Agent
-
--- initialModel :: Model
--- initialModel = Agent (LA.fromList [0, 0]) (LA.fromList [10, 10]) (LA.fromList [100, -10])
-
--- modelToPic :: Model -> Picture
--- modelToPic a = p
---   where
---     r = pos a
---     [rx, ry] = LA.toList $ r
---     [vx, vy] = LA.toList $ r + vel a
---     position = Translate rx ry $ Circle 5
---     velocity = Line [(rx, ry), (vx, vy)]
---     p = Pictures [box, traceShow velocity velocity, position]
-
-
--- nextModel :: Float -> Model -> Model
--- nextModel delta agent = agent'
---   where
---     agent' = Agent r v a
---     -- r = r0 + vt + (1/2)at^2
---     r = (pos agent) + (LA.scale delta (vel agent)) + (LA.scale (0.5*delta**2) (acc agent) )
---     -- v = at + v0
---     v = (vel agent) + (LA.scale delta (acc agent))
---     a = acc agent
+initialModel :: Model
+initialModel = MkState
+               { stMass   = V.fromList masses
+               , stCharge = V.fromList charges
+               , stPos    = V.fromList positions
+               , stVel    = V.fromList velocities
+               , stCutoff = V.fromList cutoffs
+               , stPP     = potentialParams
+               }
+  where
+    masses = [Tagged 1]
+    charges = [1]
+    positions = map (Tagged . V.fromList) [ [0.0,0.0] ]
+    velocities = map (Tagged . V.fromList) [ [10, 10] ]
+    cutoffs = [5]
+    potentialParams =
+      MkPotentialParams
+      { ppOrder = 3
+      , ppConstant = 1
+      }
 
 
--- step :: ViewPort -> Float -> Model -> Model
--- step _ t = makePeriodic . nextModel t
+modelToPic :: Model -> Picture
+modelToPic a = picture
+  where
+    rs = V.map realToFrac $ stCutoff a
+    xs = V.map unTag $ stPos a
+    positions = V.zipWith (\x r -> Translate (realToFrac $ x V.! 0) (realToFrac $ x V.! 1) $ Circle r) xs rs
+
+    picture = Pictures (box : V.toList positions)
+
+    -- rs = V.map unTag
+
+    -- r = pos a
+    -- [rx, ry] = LA.toList $ r
+    -- [vx, vy] = LA.toList $ r + vel a
+    -- position = Translate rx ry $ Circle 5
+    -- velocity = Line [(rx, ry), (vx, vy)]
+    -- p = Pictures [box, traceShow velocity velocity, position]
+
+
+nextModel :: Float -> Model -> Model
+nextModel delta model = velocityVerlet (realToFrac delta) model
+
+
+step :: ViewPort -> Float -> Model -> Model
+step _ t = nextModel t
 
 
 -- makePeriodic :: Agent -> Agent
@@ -279,11 +290,11 @@ velocityVerlet dt s = s'
 
 
 
--- test =
---   simulate
---     (InWindow "Agents" (100, 100) (0, 0))
---     white
---     120
---     initialModel
---     modelToPic
---     step
+test =
+  simulate
+    (InWindow "Agents" (100, 100) (0, 0))
+    white
+    120
+    initialModel
+    modelToPic
+    step
