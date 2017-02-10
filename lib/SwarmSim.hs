@@ -189,9 +189,13 @@ forces pp ps xs qs = V.map computeForce indices
 velocityVerlet :: TimeStep -> State -> State
 velocityVerlet dt s = s'
   where
+
+    localForces :: Matrix Double -> Vector Force
+    localForces xs = forces (stPP s) (V.map Tagged xs) (stCutoff s) (stCharge s)
+
     x = V.map unTag $ stPos s
     v = V.map unTag $ stVel s
-    a = V.map unTag $ stAcc s
+    a = V.map unTag $ localForces x
 
     -- kick
     -- v(t+Δt/2) = v(t)  + a(t)Δt/2
@@ -199,13 +203,13 @@ velocityVerlet dt s = s'
     v_ :: Matrix Double
 
     -- drift
-    -- x(t+Δt) = x(t) + v(t)Δt + 0.5a(t)Δt²
-    x' = x !+! v_ !!* dt !+! a !!* (0.5*dt^2)
+    -- x(t+Δt) = x(t) + v(t+0.5Δt)Δt
+    x' = x !+! v_ !!* dt
     x' :: Matrix Double
 
     -- -- forces
     -- -- a(t+Δt) = F(x(t+Δt))
-    a_ = forces (stPP s) (V.map Tagged x') (stCutoff s) (stCharge s)
+    a_ = localForces x'
     a_ :: Vector Force
     a' :: Matrix Double
     a' = V.map unTag a_
