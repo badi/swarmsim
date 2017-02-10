@@ -205,7 +205,7 @@ velocityVerlet dt s = s'
 
     -- -- forces
     -- -- a(t+Δt) = F(x(t+Δt))
-    a_ = forces (stPP s) (stPos s) (stCutoff s) (stCharge s)
+    a_ = forces (stPP s) (V.map Tagged x') (stCutoff s) (stCharge s)
     a_ :: Vector Force
     a' :: Matrix Double
     a' = V.map unTag a_
