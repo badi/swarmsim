@@ -85,11 +85,13 @@ type Neighbor = Position
 
 data State =
   MkState
-  { stMass  :: !(V.Vector Mass)
-  , stCharge:: !(V.Vector Charge)
-  , stPos   :: !(V.Vector Position)
-  , stVel   :: !(V.Vector Velocity)
-  , stAcc   :: !(V.Vector Acceleration)
+  { stMass  :: !(Vector Mass)
+  , stCharge:: !(Vector Charge)
+  , stPos   :: !(Vector Position)
+  , stVel   :: !(Vector Velocity)
+  , stAcc   :: !(Vector Acceleration)
+  , stCutoff:: !(Vector Distance)
+  , stPP    :: !PotentialParams
   } deriving Show
 
 data PotentialParams =
@@ -189,30 +191,40 @@ forces pp ps xs qs = V.map computeForce indices
     computeForce i = coulombForces pp (ps V.! i) (xs V.! i) (ps' V.! i) (qs' V.! i)
 
 
+velocityVerlet :: TimeStep -> State -> State
+velocityVerlet dt s = s'
+  where
+    x = V.map unTag $ stPos s
+    v = V.map unTag $ stVel s
+    a = V.map unTag $ stAcc s
 
--- velocityVerlet :: TimeStep -> State -> State
--- velocityVerlet dt s = s'
---   where
---     x = unTag $! stPos s
---     v = unTag $! stVel s
---     a = unTag $! stAcc s
---     m = unTag $! stMass s
+    -- kick
+    -- v(t+Δt/2) = v(t)  + a(t)Δt/2
+    v_= v !+! a !!* (dt/2)
+    v_ :: Matrix Double
 
---     -- x⃗(t+Δt) = x⃗(t) + v⃗(t)Δt + 0.5a⃗(t)Δt²
---     x' = x + dt*v + (0.5*dt^^2)*a
+    -- drift
+    -- x(t+Δt) = x(t) + v(t)Δt + 0.5a(t)Δt²
+    x' = x !+! v_ !!* dt !+! a !!* (0.5*dt^2)
+    x' :: Matrix Double
 
---     f  = undefined
---     a' = undefined
+    -- -- forces
+    -- -- a(t+Δt) = F(x(t+Δt))
+    a_ = forces (stPP s) (stPos s) (stCutoff s) (stCharge s)
+    a_ :: Vector Force
+    a' :: Matrix Double
+    a' = V.map unTag a_
 
---     -- v⃗(t+Δt)=v⃗(t)+0.5t(a⃗(t)+a⃗(t+Δt))Δt
---     v' = v + (0.5*dt) * (a+a')
-
---     s' = s
---          { stPos = Tagged x'
---          , stVel = Tagged v'
---          , stAcc = Tagged a'
---          }
-  
+    -- kick
+    -- v(t+Δt) = v(t+Δt/2)  + a(t+Δt)Δt/2
+    v' = v_ !+! a' !!* (dt/2)
+    v' :: Matrix Double
+    
+    s' = s
+         { stPos = V.map Tagged x'
+         , stVel = V.map Tagged v'
+         , stAcc = V.map Tagged a'
+         }
 
 
 
