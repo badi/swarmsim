@@ -33,11 +33,6 @@ m,n :: Matrix Double
 m = V.fromList [v, x]
 n = 2*!!m
 
--- -- | Compute the distance matrix between the vector and every row in the matrix.
--- distanceMatrix ::  Floating a => Vector a -> Matrix a -> V.Vector a
--- distanceMatrix v m = V.map (distance v) m
-
-
 
 -- http://www.snoyman.com/blog/2016/11/haskells-missing-concurrency-basics
 -- say = S8.putStrLn . encodeUtf8
