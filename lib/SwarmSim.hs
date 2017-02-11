@@ -242,11 +242,15 @@ initialModel = MkState
                , stPP     = potentialParams
                }
   where
-    masses = [1, 1]
-    charges = [1, 1]
-    positions = [ (0,0), (100,100) ]
-    velocities = [ (10, 10),(-10,-10) ]
-    cutoffs = [5, 5]
+    masses          = [1, 1]
+    charges         = [1, 1]
+    positions       = [ (0,0)
+                      , (100,100)
+                      ]
+    velocities      = [ (10, 10)
+                      , (-10,-10)
+                      ]
+    cutoffs         = [5, 5]
     potentialParams =
       MkPotentialParams
       { ppOrder = 3
