@@ -17,17 +17,17 @@ import qualified System.IO.Streams as Stream
 
 import Linear as L
 import qualified Linear.V as L
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import Control.Lens (FoldableWithIndex(..), (^.))
 
-type Vector a = V.Vector a
-type Matrix a = V.Vector (Vector a)
+type Matrix a = Vector (V2 a)
 
 
-v,w,x :: Vector Double
-v = V.fromList [2, 2]
+v,w,x :: V2 Double
+v = V2 2 2
 w = 5*^v
-x = V.fromList [1, 2]
+x = V2 1 2
 
 m,n :: Matrix Double
 m = V.fromList [v, x]
@@ -67,15 +67,15 @@ data F
 
 
 type Mass = Tagged M Double
-type Position = Tagged X (Vector Double)
-type Velocity = Tagged V (Vector Double)
-type Acceleration = Tagged A (Vector Double)
-type Force = Tagged F (Vector Double)
+type Position = Tagged X (V2 Double)
+type Velocity = Tagged V (V2 Double)
+type Acceleration = Tagged A (V2 Double)
+type Force = Tagged F (V2 Double)
 type TimeStep = Double
 type Charge = Double
 type Index = Int
 type Distance = Double
-type Neighborhood = Vector Index
+type Neighborhood = V.Vector Index
 type Neighbor = Position
 
 data State =
@@ -95,11 +95,11 @@ data PotentialParams =
   } deriving Show
 
 
-distances :: Floating a => Matrix a -> Matrix a
+distances :: Matrix Double -> Vector (Vector Distance)
 distances m = fmap (flip distancesTo m) m
 
 
-distancesTo :: Floating a => Vector a -> Matrix a -> Vector a
+distancesTo :: V2 Double -> Matrix Double -> Vector Distance
 distancesTo v m = fmap (distance v) m
 
 
@@ -139,7 +139,7 @@ neighborhood v ixs = V.map (\i -> v V.! i) ixs
 
 pp = MkPotentialParams 3 1
 a :: Position
-a = Tagged $ V.fromList [1,2]
+a = Tagged $ V2 1 2
 q = 1.0
 bs :: Vector Position
 bs = V.fromList $ map Tagged [v,w]
@@ -158,7 +158,7 @@ coulombForces pp x1T q1 ysT qs = Tagged f
     x1 = unTag x1T
     ys = V.map unTag ysT
     effects y2 q2 = q2 *^ normalize (x1^-^y2) ^/ norm (x1^-^y2) ^ (ppOrder pp)
-    summation = V.foldl1 (^+^) $ V.zipWith effects ys qs
+    summation = V.foldl (^+^) (V2 0 0) $ V.zipWith effects ys qs
     f = q1 / (ppConstant pp) *^ summation
 
 
@@ -242,11 +242,11 @@ initialModel = MkState
                , stPP     = potentialParams
                }
   where
-    masses = [Tagged 1]
-    charges = [1]
-    positions = map (Tagged . V.fromList) [ [0.0,0.0] ]
-    velocities = map (Tagged . V.fromList) [ [10, 10] ]
-    cutoffs = [5]
+    masses = map Tagged [1, 1]
+    charges = [1, 1]
+    positions = map (Tagged . uncurry V2) [ (0,0) ]
+    velocities = map (Tagged . uncurry V2) [ (10, 10) ]
+    cutoffs = [5, 5]
     potentialParams =
       MkPotentialParams
       { ppOrder = 3
@@ -259,7 +259,10 @@ modelToPic a = picture
   where
     rs = V.map realToFrac $ stCutoff a
     xs = V.map unTag $ stPos a
-    positions = V.zipWith (\x r -> Translate (realToFrac $ x V.! 0) (realToFrac $ x V.! 1) $ Circle r) xs rs
+    positions = V.zipWith (\x r ->
+                             Translate
+                               (realToFrac $ x^._x)
+                               (realToFrac $ x^._y) $ Circle r) xs rs
 
     picture = Pictures (box : V.toList positions)
 
