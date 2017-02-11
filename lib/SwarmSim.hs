@@ -263,12 +263,14 @@ modelToPic a = picture
   where
     rs = V.map realToFrac $ stCutoff a
     xs = V.map unTag $ stPos a
-    positions = V.zipWith (\x r ->
+    cs = V.fromList [red, green, blue, yellow, cyan, magenta]
+    positions = V.zipWith3 (\x r c ->
+                             Color c $
                              Translate
                                (realToFrac $ x^._x)
-                               (realToFrac $ x^._y) $ Circle r) xs rs
+                               (realToFrac $ x^._y) $ Circle r) xs rs cs
 
-    picture = Pictures (box : V.toList positions)
+    picture = Pictures (box : V.toList (traceShow positions positions))
 
     -- rs = V.map unTag
 
@@ -285,15 +287,16 @@ nextModel delta model = velocityVerlet (realToFrac delta) model
 
 
 step :: ViewPort -> Float -> Model -> Model
-step _ t = nextModel t
+step _ t = makePeriodic . nextModel t
 
 
--- makePeriodic :: Agent -> Agent
--- makePeriodic a = a { pos = r' }
---   where
---     r = pos a
---     r' :: LA.Vector Float
---     r' = LA.cmap (\r -> r - fromIntegral(floor(r / 100)) * 100) r
+makePeriodic :: Model -> Model
+makePeriodic a = a { stPos = x' }
+  where
+    x = V.map unTag $ stPos a
+    x' :: Vector Position
+    x' = V.map Tagged $
+         V.map (\xx -> xx ^-^ (fmap (fromIntegral.floor) (xx ^/ 100)) ^* 100) x
 
 
 
