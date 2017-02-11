@@ -166,7 +166,7 @@ forces :: PotentialParams -> Vector Position -> Vector Distance -> Vector Charge
 forces pp ps xs qs = V.map computeForce indices
   where
     -- [0,1,...,n]
-    indices = V.generate (V.length ps) (+1)
+    indices = V.generate (V.length ps) id
 
     -- indices of the neighbors for each point
     ns :: Vector Neighborhood
