@@ -244,8 +244,8 @@ initialModel = MkState
   where
     masses = map Tagged [1, 1]
     charges = [1, 1]
-    positions = map (Tagged . uncurry V2) [ (0,0) ]
-    velocities = map (Tagged . uncurry V2) [ (10, 10) ]
+    positions = map (Tagged . uncurry V2) [ (0,0), (100,100) ]
+    velocities = map (Tagged . uncurry V2) [ (10, 10),(-10,-10) ]
     cutoffs = [5, 5]
     potentialParams =
       MkPotentialParams
