@@ -234,18 +234,18 @@ type Model = State
 
 initialModel :: Model
 initialModel = MkState
-               { stMass   = V.fromList masses
+               { stMass   = V.fromList $ map Tagged masses
                , stCharge = V.fromList charges
-               , stPos    = V.fromList positions
-               , stVel    = V.fromList velocities
+               , stPos    = V.fromList $ map (Tagged . uncurry V2) positions
+               , stVel    = V.fromList $ map (Tagged . uncurry V2) velocities
                , stCutoff = V.fromList cutoffs
                , stPP     = potentialParams
                }
   where
-    masses = map Tagged [1, 1]
+    masses = [1, 1]
     charges = [1, 1]
-    positions = map (Tagged . uncurry V2) [ (0,0), (100,100) ]
-    velocities = map (Tagged . uncurry V2) [ (10, 10),(-10,-10) ]
+    positions = [ (0,0), (100,100) ]
+    velocities = [ (10, 10),(-10,-10) ]
     cutoffs = [5, 5]
     potentialParams =
       MkPotentialParams
